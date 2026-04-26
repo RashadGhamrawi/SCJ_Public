@@ -347,6 +347,39 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--bronze); background: var(--white); box-shadow: 0 0 0 3px rgba(174, 118, 55, 0.1); }
         .contact-form .btn { margin-top: 1rem; justify-self: start; }
         
+        /* New Style for Mailing List Checkbox */
+        .checkbox-group {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            transform: scale(1.2);
+            accent-color: var(--jade);
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Form Status Message */
+        #form-status {
+            display: none;
+            padding: 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
         footer { background: var(--dark-teal); color: var(--cream); padding: 5rem 2rem 2rem; position: relative; border-top: 4px solid var(--bronze); }
         .footer-container { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4rem; margin-bottom: 4rem; }
         .footer-brand { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--bronze); letter-spacing: 1px; }
@@ -691,18 +724,18 @@
             </div>
             
             <div class="contact-form-container">
-                <form action="mailto:saudicomjp@gmail.com" method="POST" enctype="text/plain" class="contact-form">
+                <form id="scj-contact-form" action="https://formspree.io/f/mlgavaro" method="POST" class="contact-form">
                     <div class="form-group">
                         <label for="name" data-en="Full Name" data-ar="الاسم الكامل" data-ja="氏名">Full Name</label>
                         <input type="text" id="name" name="name" required>
                     </div>
                     <div class="form-group">
                         <label for="email" data-en="Email Address" data-ar="البريد الإلكتروني" data-ja="メールアドレス">Email Address</label>
-                        <input type="email" id="email" name="email" required>
+                        <input type="email" id="email" name="_replyto" required>
                     </div>
                     <div class="form-group">
                         <label for="subject" data-en="Interest" data-ar="الاهتمام" data-ja="関心事項">Interest</label>
-                        <select id="subject" name="subject">
+                        <select id="subject" name="interest">
                             <option value="Join Us" data-en="Join Us" data-ar="انضم إلينا" data-ja="参加する">Join Us</option>
                             <option value="Volunteer" data-en="Volunteer" data-ar="تطوع" data-ja="ボランティア">Volunteer</option>
                             <option value="General Inquiry" data-en="General Inquiry" data-ar="استفسار عام" data-ja="一般的なお問い合わせ">General Inquiry</option>
@@ -712,6 +745,17 @@
                         <label for="message" data-en="Message" data-ar="الرسالة" data-ja="メッセージ">Message</label>
                         <textarea id="message" name="message" rows="5" required></textarea>
                     </div>
+                    
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="newsletter" name="newsletter_opt_in" value="Yes">
+                        <label for="newsletter" data-en="Sign up for our mailing list" data-ar="اشترك في قائمتنا البريدية" data-ja="メーリングリストに登録する">Sign up for our mailing list</label>
+                    </div>
+                    
+                    <input type="hidden" name="_subject" value="New SCJ Website Inquiry">
+                    <input type="text" name="_gotcha" style="display:none" />
+
+                    <p id="form-status"></p>
+
                     <button type="submit" class="btn btn-primary" data-en="Send Message" data-ar="إرسال الرسالة" data-ja="メッセージを送信">Send Message</button>
                 </form>
             </div>
@@ -808,6 +852,59 @@
                     behavior: 'smooth'
                 });
             });
+        });
+
+        // AJAX Form Submission for Formspree (No page reload)
+        const form = document.getElementById("scj-contact-form");
+        const statusMsg = document.getElementById("form-status");
+
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault(); // Prevents the default browser redirect
+            
+            const data = new FormData(event.target);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Change button text while sending
+            submitBtn.innerHTML = "Sending...";
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(event.target.action, {
+                    method: form.method,
+                    body: data,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    // Success! Show message and clear form
+                    statusMsg.className = "status-success";
+                    statusMsg.innerHTML = "Thank you! Your message has been sent successfully.";
+                    statusMsg.style.display = "block";
+                    form.reset();
+                } else {
+                    // Formspree returned an error
+                    statusMsg.className = "status-error";
+                    statusMsg.innerHTML = "Oops! There was a problem submitting your form.";
+                    statusMsg.style.display = "block";
+                }
+            } catch (error) {
+                // Network error
+                statusMsg.className = "status-error";
+                statusMsg.innerHTML = "Oops! There was a network error. Please try again.";
+                statusMsg.style.display = "block";
+            }
+            
+            // Reset button
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+            
+            // Hide the status message after 5 seconds
+            setTimeout(() => {
+                statusMsg.style.display = "none";
+            }, 5000);
         });
     </script>
 </body>
